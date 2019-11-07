@@ -1,0 +1,758 @@
+建立django文件
+在终端指定位置(需要创建文件的位置)输入
+django-admin startproject 文件名
+在指定文件名的文件夹里开启django服务
+python3 manage.py runserver 端口号(可不写,默认8000)
+
+
+添加 在子文件夹名字添加views.py
+在文件夹名字同级目录下,添加templates(模板)文件夹和static(静态文件)文件夹
+
+settings.py注释掉46行csrf,57行添加  os.path.join(BASE_DIR,"templates") 
+106行改为 zh-Hans 108行改为 Asia/Shanghai  
+页面末尾添加(注意逗号!!!)
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, "static"), 
+)
+
+建立新网页时:
+views里import: 
+from django.http import HttpResponse
+from django.shortcuts import render
+添加def 函数名(request):
+
+使用 render() 直接加载并响应模板
+from django.shortcuts import render
+return render(request,'模板文件名', 字典数据)
+
+urls里添加 url(r"^正则表达式",views.函数名),
+
+在templates 中创建与views.py里函数名相同的html文件
+
+获得数据:
+在views.py中,想获得网址中?后面的数据,需要用到 GET.get 语法如下:
+    #/test_if?x=1
+    x = request.GET.get("x",0)
+
+想获得表单提交的数据,需要用到 POST.get,语法如下:
+    x = request.POST.get("x", 0)
+
+返回数据:
+return HttpResponse(html)
+return render(request,"要返回的html页面名称",字典名)
+
+locals():获取该页面所有变量名称
+
+继承:
+父模板要在子模板修改的地方前后加上 block ,语法如下:
+{% block block_name %}
+定义模板块，此模板块可以被子模板重新定义的同名块覆盖
+{% endblock block_name %}
+
+子模板 重写父模板中的内容块
+{% block block_name %}
+子模板块用来覆盖父模板中 block_name 块的内容
+{% endblock block_name %}
+
+
+
+建立新app时:
+在指定文件名的文件夹内打开终端,终端输入
+django-admin startapp 文件名
+
+在已有的settings.py 里的 INSTALLED_APPS 列表中注册此应用(添加文件名即可)
+
+进入原先urls.py 先import:   from django.conf.urls import include
+之后添加路径 例如:   url(r"^sports/",include("sports.urls"))
+
+在新建立的app文件夹中手动创建urls.py  例如这是sports文件夹内
+from django.conf.urls import url
+from . import views
+
+urlpatterns = [
+    # http://127.0.0.1:8000/sports/index
+    url(r"^index$",views.index)
+]
+
+进入sports下的views.py
+剩下步骤与网页相同
+
+sports文件夹内可以单独创建templates文件夹去存放html内容,但是假如外部templates内有同名文件,则优先使用外部templates的文件
+sports文件夹内若没有index.html,则会继续查找其他文件夹内是否有该文件,若有,则会使用其他文件夹的index.html
+为了防止上述情况发生,需要在sports文件夹的templates文件夹内创建sports文件夹,并将index.html拖进sports文件夹,之后在sports文件夹的views.py内将路径加上"sports/"
+例如  return render(request,"sports/index.html")
+
+
+
+连接数据库,在建立django的文件夹里打开终端
+建立一个app应用   python3 manage.py startapp bookstore  并注册
+先创建库 create database mysite3 default charset utf8
+之后在settings中80行改为
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'mysite3',                        (创建数据库的名称)
+        'USER':'root',
+        'PASSWORD':'123456',
+        'HOST':'127.0.0.1',
+        'PORT':'3306',
+    }
+}
+
+在settings同级的__init__.py(主要文件夹)里添加
+import pymysql
+pymysql.install_as_MySQLdb()
+
+进入到bookstore/models.py 建立数据表
+类映射数据表
+对象映射数据行
+属性映射字段
+class BookStore(models.Model):
+    title = models.CharField("姓名",max_length=20)
+    price = models.DecimalField("定价",max_digits=5,decimal_places=2,default=0.0)
+......
+
+进入到终端,输入   python3 manage.py makemigrations   生成migrations文件夹
+
+进入到bookstore/migrations/0001_initial.py 查看
+
+进入到终端,输入   python3 manage.py migrate   同步到数据库,此时数据库中添加了BookStore表
+表名为 应用名_类名(小写)
+
+需要修改,添加,删除数据或对字段修改等,直接在models修改,并在终端执行python3 manage.py makemigrations 即可,之后将在migrations文件夹多出修改后的.py文件,之后在终端运行python3 manage.py migrate 即可完成操作
+
+
+
+字段类型
+
+1. BooleanField()
+
+   - 数据库类型:tinyint(1)
+   - 编程语言中:使用True或False来表示值
+   - 在数据库中:使用1或0来表示具体的值
+
+2. CharField()
+
+   - 数据库类型:varchar
+   - 注意:
+     - 必须要指定max_length参数值
+
+3. DateField()
+
+   - 数据库类型:date
+   - 作用:表示日期
+   - 编程语言中:使用字符串来表示具体值
+   - 参数:
+     - DateField.auto_now: 每次保存对象时，自动设置该字段为当前时间(取值:True/False)。
+     - DateField.auto_now_add: 当对象第一次被创建时自动设置当前时间(取值:True/False)。
+     - DateField.default: 设置当前时间(取值:字符串格式时间如: '2019-6-1')。
+     - 以上三个参数只能多选一
+
+4. DateTimeField()
+
+   - 数据库类型:datetime(6)
+   - 作用:表示日期和时间
+   - auto_now_add=True
+
+5. DecimalField()
+
+   - 数据库类型:decimal(x,y)
+
+   - 编程语言中:使用小数表示该列的值
+
+   - 在数据库中:使用小数
+
+   - 参数:
+
+     - DecimalField.max_digits: 位数总数，包括小数点后的位数。 该值必须大于等于decimal_places.
+     - DecimalField.decimal_places: 小数点后的数字数量
+
+   - 示例:
+
+     ```
+     money=models.DecimalField(
+         max_digits=7,
+         decimal_places=2,
+         default=0.0
+     )
+     ```
+
+6. FloatField()
+
+   - 数据库类型:double
+   - 编程语言中和数据库中都使用小数表示值
+
+7. EmailField()
+
+   - 数据库类型:varchar
+   - 编程语言和数据库中使用字符串
+
+8. IntegerField()
+
+   - 数据库类型:int
+   - 编程语言和数据库中使用整数
+
+9. URLField()
+
+   - 数据库类型:varchar(200)
+   - 编程语言和数据库中使用字符串
+
+10. ImageField()
+
+    - 数据库类型:varchar(100)
+
+    - 作用:在数据库中为了保存图片的路径
+
+    - 编程语言和数据库中使用字符串
+
+    - 示例:
+
+      ```
+      image=models.ImageField(
+          upload_to="static/images"
+      )
+      ```
+
+    - upload_to:指定图片的上传路径
+      在后台上传时会自动的将文件保存在指定的目录下
+
+11. TextField()
+
+    - 数据库类型:longtext
+    - 作用:表示不定长的字符数据
+
+- 参考文档 <https://docs.djangoproject.com/en/1.11/ref/models/fields/#field-types>
+
+
+
+字段选项FIELD_OPTIONS
+
+   - 字段选项, 指定创建的列的额外的信息
+   - 允许出现多个字段选项,多个选项之间使用,隔开
+
+   1. primary_key
+      - 如果设置为True,表示该列为主键,如果指定一个字段为主键，则此数库表不会创建id字段
+   2. blank
+      - 设置为True时，字段可以为空。设置为False时，字段是必须填写的。
+   3. null
+      - 如果设置为True,表示该列值允许为空。
+      - 默认为False,如果此选项为False建议加入default选项来设置默认值
+   4. default
+      - 设置所在列的默认值,如果字段选项null=False建议添加此项
+   5. db_index
+      - 如果设置为True,表示为该列增加索引
+   6. unique
+      - 如果设置为True,表示该字段在数据库中的值必须是唯一(不能重复出现的)
+   7. db_column
+      - 指定列的名称,如果不指定的话则采用属性名作为列名
+   8. verbose_name
+      - 设置此字段在admin界面上的显示名称。
+
+   - 示例:
+
+     ```python
+     # 创建一个属性,表示用户名称,长度30个字符,必须是唯一的,不能为空,添加索引
+     name = models.CharField(max_length=30, unique=True, null=False, db_index=True)
+     ```
+
+- 文档参见:
+  - <https://docs.djangoproject.com/en/1.11/ref/models/fields/#field-options>
+
+
+添加数据:
+方法1:
+在指定文件夹路径下打开终端,输入 python3 manage.py shell
+from bookstore(应用名称).models import Book(类名) 
+
+obj = BookStore.objects.create(title="人类简史",price=26.5,desc="追溯人类的根源") 
+或
+obj = BookStore(title="时间简史",price=30.0,desc="时间是怎么由来的")    
+obj.save()      
+之后可以在数据库中查找到该数据
+
+方法2:
+在应用下的views.py的函数里输入添加语句   BookStore.objects.create(title="hahaha")
+之后在浏览器中运行(刷新)页面,即可添加数据,重复刷新会继续添加数据
+
+
+查询数据:
+****print(QuerySet.query)可查看当前orm语句具体执行的SQL语句
+1.先在models.py类下面添加函数
+    def __str__(self):
+        return "<%s>" % (self.title)
+之后
+from bookstore.models import Book                                       
+all_res = Book.objects.all()         //全量查询                                        
+all_res    
+2.或,直接在shell中:
+all_values=Book.objects.values("title","pub")	//返回字典
+3.或,直接在shell中:
+all_list=Book.objects.values_list("title","pub")   //返回元组
+上述三种方法都可以迭代
+
+根据大小查询:加-为倒序
+all_p= Book.objects.order_by("price")  
+
+根据条件查询:
+在shell中
+all_q = Book.objects.filter(pub="清华大学出版社",title="python")
+
+查询谓词:
+每一个查询谓词是一个独立的查询功能
+
+1. `__exact` : 等值匹配
+   Author.objects.filter(id__exact=1)
+   # 等同于select * from author where id = 1
+
+2. `__contains` : 包含指定值
+   Author.objects.filter(name__contains='w')
+   # 等同于 select * from author where name like '%w%'
+
+3. `__startswith` : 以 XXX 开始
+
+4. `__endswith` : 以 XXX 开始
+
+5. `__gt` : 大于指定值
+   Author.objects.filer(age__gt=50)
+   # 等同于 select * from author where age > 50
+
+6. `__gte` : 大于等于
+
+7. `__lt` : 小于
+
+8. `__lte` : 小于等于
+
+9. `__in` : 查找数据是否在指定范围内
+   Author.objects.filter(country__in=['中国','日本','韩国'])
+   # 等同于 select * from author where country in ('中国','日本','韩国')
+
+10. `__range`: 查找数据是否在指定的区间范围内
+    Author.objects.filter(age__range=(35,50))
+    # 等同于 SELECT ... WHERE Author BETWEEN 35 and 50;
+
+11. <https://docs.djangoproject.com/en/1.11/ref/models/querysets/#field-lookups
+
+
+不等的条件筛选:MyModel.objects.exclude(条件)
+单一数据的筛选:MyModel.objects.get(条件)
+
+修改数据:
+1. 查
+    - 通过 get() 得到要修改的实体对象
+2. 改
+    - 通过 对象.属性 的方式修改数据
+3. 保存
+    - 通过 对象.save() 保存数据
+例如:
+     from bookstore import models
+     abook = models.Book.objects.get(id=10)
+     abook.market_price = "10.5"
+     abook.save()
+
+批量修改:
+books = Book.objects.filter(id__gt=3)
+books.update(price=0)
+
+
+删除数据:
+删除单个对象:
+1. 查找查询结果对应的一个数据对象
+2. 调用这个数据对象的delete()方法实现删除
+     try:
+         auth = Author.objects.get(id=1)
+         auth.delete()
+     except:
+         print(删除失败)
+
+删除查询结果集
+1. 查找查询结果集中满足条件的全部QuerySet查询集合对象
+2. 调用查询集合对象的delete()方法实现删除
+     auths = Author.objects.filter(age__gt=65)
+     auths.delete()
+伪删除:  - isACtive - True 活跃的/False不活跃的[即删除]
+ex:Book表中添加 isActive字段(布尔型),默认值-True
+
+
+聚合查询:
+不带分组聚合
+聚合函数:
+  定义模块: django.db.models
+  用法: from django.db.models import *
+  聚合函数: 
+    Sum, Avg, Count, Max, Min
+语法: 
+  MyModel.objects.aggregate(结果变量名=聚合函数('列'))
+返回结果:
+  由 结果变量名和值组成的字典
+  格式为:
+    {"结果变量名": 值}
+
+分组聚合
+分组聚合是指通过计算查询结果中每一个对象所关联的对象集合，从而得出总计值(也可以是平均值或总和)，即为查询集的每一项生成聚合。
+语法: 
+  QuerySet.annotate(结果变量名=聚合函数('列'))
+用法步骤:
+  1通过先用查询结果MyModel.objects.value. 查找查询要分组聚合的列
+     MyModel.objects.value('列1', '列2')
+  2通过返回结果的 QuerySet.annotate 方法分组聚合得到分组结果
+     QuerySet.annotate(名=聚合函数('列'))
+     返回 QuerySet 结果集,内部存储结果的字典
+
+
+F对象:一个F对象代表数据库中某条记录的字段的信息
+例如:   update ... set 字段=字段+10
+	select * from book where price > market_price
+1作用:
+   通常是对数据库中的字段值在不获取的情况下进行操作
+   用于类属性(字段)之间的比较。
+2用法
+   F对象在数据包 django.db.models 中，使用时需要先导入
+   from django.db.models import F
+   F('列名')
+
+Q对象:
+当在获取查询结果集 使用复杂的逻辑或  `|` 、 逻辑非 `~` 等操作时可以借助于 Q对象进行操作
+例如:  Book.objects.filter(Q(price__lt=20)|Q(pub="清华大学出版社"))
+
+在or中写原生数据库语法:MyModel.objects.raw(sql语句)
+例如:  books = Book.objects.raw('select * from bookstore_book')
+之后遍历
+
+
+数据表关联关系映射
+一对一映射:
+class Author(models.Model):
+    name = models.CharField(max_length=11)
+
+class Wife(models.Model):
+    name = models.CharField(max_length=11)
+    author = models.OneToOneField(Author)
+创建:
+author1 = Author.objects.create(name='小泽老师')
+查找:
+wife1.author.name
+author1.wife.name
+
+一对多映射:
+class Publisher(models.Model):
+    name = models.CharField(max_length=11)
+
+class Book(models.Model):
+    title = models.CharField(max_length=11)
+    publisher = models.ForeignKey(Publisher)
+创建:
+pub1 = Publisher.objects.create(name='清华大学出版社')
+book1 = Book.objects.create(title='C++', publisher=pub1)
+查找:
+book = Book.objects.get(id=1)
+pub1 = Publisher.objects.get(name='清华大学出版社')
+books = pub1.book_set.all()
+
+多对多映射;
+class Author(models.Model):
+
+    name = models.CharField(max_length=11)
+
+    def __str__(self):
+        return self.name
+
+class Book(models.Model):
+    title = models.CharField(max_length=11)
+    author = models.ManyToManyField(Author)
+
+    def __str__(self):
+        return self.title
+创建:
+author1 = Author.objects.create(name='吕老师')
+book1 = Book.objects.create(title='C++')
+绑定:
+author1.book_set.add(book1)
+查找:
+book.authors.all() -> 获取 book 对应的所有的author的信息
+book.authors.filter(age__gt=80) -> 获取book对应的作者中年龄大于80岁的作者的信息
+author.book_set.all()  -> 同上
+author.book_set.filter()  -> 同上
+
+
+cookies:保存在客户端浏览器上的存储空间，通常用来记录浏览器端自己的信息和当前连接的确认信息
+
+添加cookie
+为浏览器添加键为 my_var1,值为123，过期时间为1个小时的cookie
+    responds = HttpResponse("已添加 my_var1,值为123")
+    responds.set_cookie('my_var1', 123, 3600)
+    return responds
+
+修改cookie
+为浏览器添加键为 my_var1,修改值为456，过期时间为2个小时的cookie
+    responds = HttpResponse("已修改 my_var1,值为456")
+    responds.set_cookie('my_var1', 456, 3600*2)
+    return responds
+
+删除cookie
+删除浏览器键为 my_var1的cookie
+    resp = HttpResponse("已删除 my_var1")
+    resp.delete_cookie('my_var1')
+    return resp
+
+获取cookie
+获取浏览器中 my_var变量对应的值
+    value = request.COOKIES.get('my_var1', '没有值!')
+    print("cookie my_var1 = ", value)
+    return HttpResponse("my_var1:" + value)
+
+例如:
+     resp = HttpResponse()
+     resp.set_cookie('cookies名', cookies值, 超期时间)
+     return resp
+
+     resp = render(request,'xxx.html',locals())
+     resp.set_cookie('cookies名', cookies值, 超期时间)
+     return resp
+
+     if "username" in request.COOKIES and "uid" in request.COOKIES:
+
+
+session:又名会话控制，是在服务器上开辟一段空间用于保留浏览器和服务器交互时的重要数据
+session的数据会保存在django的服务器数据库
+
+保存 session 的值到服务器:
+request.session['KEY'] = VALUE
+例如:
+	request.session['username'] = username
+        request.session['uid'] = user[0].id
+
+获取session的值:
+VALUE = request.session.get('KEY', 缺省值)
+例如:
+	username = request.session.get('username')
+    	uid = request.session.get('uid')
+
+删除session:
+del request.session['session名']
+例如:
+	del request.session['username']
+        del request.session['uid']
+
+定期清理session:  python3 manage.py clearsessions
+
+检查登录状态:
+优先检查session
+若session没有数据,检查cookies,若有,回写session
+若cookies没有数据,则让用户去登录页面
+
+登录状态存储:
+肯定要存session,username,uid
+按需存cookies[根据用户是否勾选保存密码]
+
+
+中间件:
+中间件是 Django 请求/响应处理的钩子框架。它是一个轻量级的、低级的“插件”系统，用于全局改变 Django 的输入或输出。
+中间件类须继承自 `django.utils.deprecation.MiddlewareMixin`类
+--def process_request(self, request): 执行路由之前被调用，在每个请求上调用，返回None或HttpResponse对象 
+--def process_view(self, request, callback, callback_args, callback_kwargs): 调用视图之前被调用，在每个请求上调用，返回None或HttpResponse对象
+--def process_response(self, request, response): 所有响应返回浏览器之前被调用，在每个请求上调用，返回HttpResponse对象
+
+在主文件夹里创建middleware包,创建mymiddleware.py
+编写中间件类:
+# file : middleware/mymiddleware.py
+from django.http import HttpResponse, Http404
+from django.utils.deprecation import MiddlewareMixin
+
+class MyMiddleWare(MiddlewareMixin):
+    def process_request(self, request):
+        print("process_request do ---")
+
+    def process_view(self, request, callback, callback_args, callback_kwargs):
+        print("process_view do ---")
+
+    def process_response(self, request, response):
+        print("process_response do ---")
+        return response
+
+注册中间件:(文件夹名.文件名.类名)
+# file : settings.py
+MIDDLEWARE = [
+    'middleware.mymiddleware.MyMiddleWare'
+       ]
+
+先写的中间件永远包在最外层
+例如写两个中间件,返回值为
+MyMw process_request do ---
+MyMw2 process_request do ---
+MyMw process_view do ---
+MyMw2 process_view do ---
+---views start---
+MyMw2 process_response do ---
+MyMw process_response do ---
+
+
+分页:分页是指在web页面有大量数据需要显示，为了阅读方便在每个页页中只显示部分数据.
+views函数:
+from django.core.paginator import Paginator
+def book(request):
+    bks = models.Book.objects.all()
+    paginator = Paginator(bks, 10)  #每页显示10本书
+
+    print('当前对象的总个数是:', paginator.count)
+    print('当前对象的面码范围是:', paginator.page_range)
+    print('总页数是：', paginator.    )
+    print('每页最大个数:', paginator.per_page)
+
+    cur_page = request.GET.get('page', 1)  # 得到默认的当前页(输入网址即跳转到第一页)
+    page = paginator.page(cur_page)	# 得到分页
+    return render(request, 'bookstore/book.html', locals())
+
+html模板:
+body内:
+    {% for book in page %}
+	<p>
+	    {{ book.title }}
+	</p>
+    {% endfor %}
+
+    {% if page.has_previous %}
+        <a href="/index/book?page={{ page.previous_page_number }}">上一页</a>
+    {% else %}
+        上一页
+    {% endif %}
+
+    {% for p in paginator.page_range %}
+        {% if p == page.number %}
+            {{ p }}
+        {% else %}
+            <a href="/index/book?page={{ p }}">{{ p }}</a>
+        {% endif %}
+    {% endfor %}
+
+    {% if page.has_next %}
+        <a href="/index/book?page={{ page.next_page_number }}">下一页</a>
+    {% else %}
+        下一页
+    {% endif %}
+
+
+文件上传:
+在当前项目文件夹下创建 `static/files` 文件夹
+settings.py 增加:
+STATICFILES_DIRS = (os.path.join(BASE_DIR,'static'),)
+MEDIA_ROOT = os.path.join(BASE_DIR,"static/files")
+
+html:
+ <form action="/index/test_upload" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="myfile" >
+        <input type="submit" value="上传">
+ </form>
+
+添加路由
+views.py增加:
+from gevent import os
+from django.conf import settings
+
+def test_upload(request):
+    if request.method == "GET":
+        return render(request,"index/test_upload.html")
+    elif request.method == "POST":
+        myfile = request.FILES['myfile']
+        file_path = os.path.join(settings.MEDIA_ROOT,myfile.name)
+
+        with open(file_path,"wb") as f:
+            data = myfile.file.read()
+            f.write(data)
+
+        return HttpResponse("上传成功")
+
+
+下载文件:
+views里:
+import csv
+from django.http import HttpResponse
+from .models import Book
+
+def make_csv_view(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="mybook.csv"'
+	all_book = Book.objects.all()
+    writer = csv.writer(response)
+    writer.writerow(['id', 'title'])
+    for b in all_book:    
+    	writer.writerow([b.id, b.title])
+
+    return response
+
+html里增加a标签:
+<a href="/index/book_csv?page={{ page.number }}">点击下载</a>
+
+
+
+项目部署:
+nginx 作用
+	负载均衡， 多台服务器轮流处理请求
+	反向代理
+
+原理:
+	客户端请求nginx,再由nginx 请求 uwsgi, 运行django下的python代码
+
+ubuntu 下 nginx 安装
+	sudo apt install nginx
+  	vim /etc/apt/sources.list
+  	#更改国内源
+  	sudo apt-get update
+
+nginx 配置 
+	修改nginx 的配置文件 /etc/nginx/sites-available/default
+	vim打开default文件
+	在server节点下添加新的location项，指向uwsgi的ip与端口。
+ 	 server {
+      		...
+      		location / {
+          		uwsgi_pass 127.0.0.1:8000;  # 重定向到127.0.0.1的8000端口
+          	include /etc/nginx/uwsgi_params; # 将所有的参数转到uwsgi下
+      		}
+      		...
+ 	 }
+
+nginx服务控制
+  	sudo /etc/init.d/nginx start|stop|restart|status
+  	# 或
+  	sudo service nginx start|stop|restart|status
+  	> 通过 start,stop,restart,status 可能实现nginx服务的启动、停止、重启、查扑克状态等操作
+
+修改uWSGI配置 
+	修改`项目文件夹/uwsgi.ini`下的Http通信方式改为socket通信方式:
+	  [uwsgi]
+	  # 去掉如下
+	  # http=127.0.0.1:8000
+	  # 改为
+	  socket=127.0.0.1:8000
+
+重启uWSGI服务
+	sudo /etc/init.d/nginx restart
+  	sudo uwsgi --stop uwsgi.pid
+  	sudo uwsgi --ini 项目文件夹/uwsgi.ini
+
+测试:
+  	在浏览器端输入<http://127.0.0.1> 进行测试
+  	注意，此时端口号为80(nginx默认值)
+
+ps:可以在终端中输入  ps aux |grep "uwsgi"  来确认是否开启uwsgi
+
+解决静态路径问题
+  # file : /etc/nginx/sites-available/default
+  # 新添加location /static 路由配置，重定向到指定的绝对路径
+  server {
+      ...
+      location /static {
+          # root static文件夹所在的绝对路径,如:
+          root /home/tarena/aid1907/month03/month03-3-django/django/day08/mysite8
+           ; # 重定向/static请求的路径，这里改为你项目的文件夹
+      }
+      ...
+  }
+
+
+404页面,500页面:
+在主文件夹创建templates文件夹,之后创建404/500.html,之后在html里修改页面样式
+之后在settings里的TEMPLATES修改DIRS  [os.path.join(BASE_DIR,"templates"),]
+
+
